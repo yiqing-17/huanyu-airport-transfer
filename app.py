@@ -1,82 +1,372 @@
-from flask import Flask, render_template, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
-import os, secrets
+"""黑桃機場接送：網站 + 預約紀錄 + 後台。
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(16))
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///huanyu.db').replace('postgres://','postgresql://')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+- 前台網站是 site/ 裡的靜態網站，由這個程式直接提供。
+- /data/prices.json 不讀檔案，而是回傳資料庫裡目前的價格，所以後台改價，前台立刻更新。
+- /api/bookings 接收預約並存檔（價格由伺服器重新計算）。
+- /admin 後台：訂單管理、價格管理。必須先登入。
+"""
+import json
+import os
+import secrets
+from datetime import timedelta
+from pathlib import Path
 
-class Booking(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    order_no = db.Column(db.String(32), unique=True, nullable=False)
-    service_type = db.Column(db.String(20), nullable=False)
-    airport = db.Column(db.String(50), nullable=False)
-    area = db.Column(db.String(150), nullable=False)
-    vehicle = db.Column(db.String(50), nullable=False)
-    date = db.Column(db.String(20), nullable=False)
-    time = db.Column(db.String(20), nullable=False)
-    passengers = db.Column(db.Integer, nullable=False)
-    luggage = db.Column(db.Integer, default=0)
-    address = db.Column(db.Text, nullable=False)
-    name = db.Column(db.String(80), nullable=False)
-    phone = db.Column(db.String(30), nullable=False)
-    flight = db.Column(db.String(30), default='')
-    note = db.Column(db.Text, default='')
-    price = db.Column(db.Integer, nullable=False)
-    status = db.Column(db.String(20), default='待確認')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+from flask import (Flask, Response, abort, flash, jsonify, redirect, render_template,
+                   request, send_from_directory, session, url_for)
+from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 
-PRICES = {
-'國產五人座轎車': [
-('台北市｜萬華、中正、大安、信義、大同、中山、松山',1000,1100),('台北市｜內湖、士林、北投、文山、南港',1100,1200),('新北市｜林口、鶯歌',900,1000),('新北市｜泰山、三峽、新莊、五股、三重、蘆洲',1000,1100),('新北市｜樹林、八里、板橋、土城、中和、永和',1000,1100),('新北市｜汐止、新店、淡水',1200,1300),('新北市｜深坑、石碇',1600,1700),('新北市｜瑞芳、坪林、三芝',1600,1700),('新北市｜烏來、雙溪、平溪',1900,2000),('新北市｜貢寮、石門、金山、萬里',2300,2400),('基隆市',1400,1500),('桃園市｜桃園、龜山、中壢、平鎮、蘆竹、新屋、觀音、八德',900,1000),('桃園市｜楊梅、龍潭、大溪、復興',1000,1100),('新竹區域｜新豐、湖口、竹北',1400,1500),('新竹區域｜新埔、關西、芎林、橫山、竹東、寶山、峨眉、北埔',1700,1800),('苗栗區域｜竹南、頭份',2200,2300),('苗栗區域｜其餘苗栗區域',2400,2500),('台中',2600,2700),('彰化',3500,3600),('南投',4000,4100),('宜蘭區域｜頭城、礁溪、宜蘭、壯圍、員山',2800,2900),('宜蘭區域｜羅東、五結、三星、冬山',2800,2900),('宜蘭區域｜蘇澳、大同、南澳',3000,3100),('花蓮',6500,6600),('台東',10500,10600),('嘉義',5000,5100),('台南',6000,6100),('高雄',6500,6600),('屏東',7000,7100)],
-'國產五人座休旅車': [
-('台北市｜萬華、中正、大安、信義、大同、中山、松山',1200,1300),('台北市｜內湖、士林、北投、文山、南港',1200,1300),('新北市｜林口、鶯歌',1100,1200),('新北市｜泰山、三峽、新莊、五股、三重、蘆洲',1200,1300),('新北市｜樹林、八里、板橋、土城、中和、永和',1200,1300),('新北市｜汐止、新店、淡水',1600,1800),('新北市｜深坑、石碇',1900,2000),('新北市｜瑞芳、坪林、三芝',1900,2000),('新北市｜烏來、雙溪、平溪',2100,2200),('新北市｜貢寮、石門、金山、萬里',2500,2600),('基隆市',1700,1800),('桃園市｜桃園、龜山、中壢、平鎮、蘆竹、新屋、觀音、八德',1100,1200),('桃園市｜楊梅、龍潭、大溪、復興',1200,1300),('新竹區域｜新豐、湖口、竹北',1700,1800),('新竹區域｜新埔、關西、芎林、橫山、竹東、寶山、峨眉、北埔',2000,2100),('苗栗區域｜竹南、頭份',2400,2500),('苗栗區域｜其餘苗栗區域',2600,2700),('台中',2800,2900),('彰化',3700,3800),('南投',4200,4300),('宜蘭區域｜頭城、礁溪、宜蘭、壯圍、員山',3000,3100),('宜蘭區域｜羅東、五結、三星、冬山',3000,3100),('宜蘭區域｜蘇澳、大同、南澳',3200,3300),('花蓮',7200,7300),('台東',10700,10800),('嘉義',5200,5300),('台南',6200,6300),('高雄',6700,6800),('屏東',7200,7300)],
-'國產九人座商務車': [
-('台北市｜萬華、中正、大安、信義、大同、中山、松山',1600,1700),('台北市｜內湖、士林、北投、文山、南港',1700,1800),('新北市｜林口、鶯歌',1600,1700),('新北市｜泰山、三峽、新莊、五股、三重、蘆洲',1600,1700),('新北市｜樹林、八里、板橋、土城、中和、永和',1600,1700),('新北市｜汐止、新店、淡水',1900,2000),('新北市｜深坑、石碇',2000,2200),('新北市｜瑞芳、坪林、三芝',1900,2000),('新北市｜烏來、雙溪、平溪',2400,2500),('新北市｜貢寮、石門、金山、萬里',2600,2700),('基隆市',1800,1900),('桃園市｜桃園、龜山、中壢、平鎮、蘆竹、新屋、觀音、八德',1300,1400),('桃園市｜楊梅、龍潭、大溪、復興',1600,1700),('新竹區域｜新豐、湖口、竹北',1900,2000),('新竹區域｜新埔、關西、芎林、橫山、竹東、寶山、峨眉、北埔',2100,2200),('苗栗區域｜竹南、頭份',2500,2600),('苗栗區域｜其餘苗栗區域',2700,2800),('台中',2900,3000),('彰化',4000,4100),('南投',4500,4600),('宜蘭區域｜頭城、礁溪、宜蘭、壯圍、員山',3300,3400),('宜蘭區域｜羅東、五結、三星、冬山',3300,3400),('宜蘭區域｜蘇澳、大同、南澳',3500,3600),('花蓮',7500,7600),('台東',11500,11600),('嘉義',5500,5600),('台南',6300,6400),('高雄',7000,7100),('屏東',8000,8100)],
-'進口賓士九人座': [
-('台北市｜萬華、中正、大安、信義、大同、中山、松山',1800,1900),('台北市｜內湖、士林、北投、文山、南港',1900,2000),('新北市｜林口、鶯歌',1900,2000),('新北市｜泰山、三峽、新莊、五股、三重、蘆洲',1900,2000),('新北市｜樹林、八里、板橋、土城、中和、永和',2200,2300),('新北市｜汐止、新店、淡水',2200,2300),('新北市｜深坑、石碇',2000,2200),('新北市｜瑞芳、坪林、三芝',2600,2700),('新北市｜烏來、雙溪、平溪',2700,2800),('新北市｜貢寮、石門、金山、萬里',3100,3200),('基隆市',2000,2100),('桃園市｜桃園、龜山、中壢、平鎮、蘆竹、新屋、觀音、八德',1600,1700),('桃園市｜楊梅、龍潭、大溪、復興',1900,2000),('新竹區域｜新豐、湖口、竹北',2100,2200),('新竹區域｜新埔、關西、芎林、橫山、竹東、寶山、峨眉、北埔',2400,2500),('苗栗區域｜竹南、頭份',2600,2700),('苗栗區域｜其餘苗栗區域',2800,2900),('台中',3300,3400),('彰化',4300,4400),('南投',5000,5100),('宜蘭區域｜頭城、礁溪、宜蘭、壯圍、員山',3800,3900),('宜蘭區域｜羅東、五結、三星、冬山',3800,3900),('宜蘭區域｜蘇澳、大同、南澳',4000,4100),('花蓮',8000,8100),('台東',12000,12100),('嘉義',6000,6100),('台南',6500,6600),('高雄',7500,7600),('屏東',9000,9100)]}
+import bookings as bk
+import pricing
+import security
+from models import Booking, PriceVersion, db
 
-@app.route('/')
-def home():
-    return render_template('index.html', prices=PRICES, vehicle_names=list(PRICES))
+BASE_DIR = Path(__file__).resolve().parent
+STATUSES = ["待確認", "已確認", "已派車", "已完成", "已取消"]
 
-@app.get('/api/quote')
-def quote():
-    vehicle=request.args.get('vehicle'); area=request.args.get('area'); service=request.args.get('service','pickup')
+# 前台網站只開放這些檔案，其他（build.py、src/、README 等）一律 404
+SITE_DIRS = {"css", "js", "images", "data"}
+SITE_FILES = {"favicon.svg", "robots.txt", "sitemap.xml"}
+PUBLIC_DATA = {"routes.json", "fleet.json"}          # prices.json 由資料庫提供，不直接讀檔
+
+
+def create_app(test_config=None):
     try:
-        rows=PRICES[vehicle]; row=next(r for r in rows if r[0]==area)
-        return jsonify(ok=True, price=row[1 if service=='pickup' else 2])
-    except Exception:
-        return jsonify(ok=False, message='找不到對應價格'),400
+        from dotenv import load_dotenv
+        load_dotenv(BASE_DIR / ".env")
+    except ImportError:
+        pass
 
-@app.post('/api/bookings')
-def create_booking():
-    data=request.get_json() or {}
-    required=['service_type','airport','area','vehicle','date','time','passengers','address','name','phone']
-    if any(not str(data.get(k,'')).strip() for k in required):
-        return jsonify(ok=False,message='請完整填寫必填資料'),400
-    try:
-        rows=PRICES[data['vehicle']]; row=next(r for r in rows if r[0]==data['area'])
-        price=row[1 if data['service_type']=='pickup' else 2]
-        order='HY'+datetime.now().strftime('%Y%m%d%H%M%S')+secrets.token_hex(2).upper()
-        b=Booking(order_no=order, service_type=data['service_type'], airport=data['airport'], area=data['area'], vehicle=data['vehicle'], date=data['date'], time=data['time'], passengers=int(data['passengers']), luggage=int(data.get('luggage',0)), address=data['address'], name=data['name'], phone=data['phone'], flight=data.get('flight',''), note=data.get('note',''), price=price)
-        db.session.add(b); db.session.commit()
-        return jsonify(ok=True, order_no=order, price=price)
-    except Exception as e:
-        db.session.rollback(); return jsonify(ok=False,message=str(e)),500
+    app = Flask(__name__)
+    dev = os.environ.get("FLASK_DEBUG") == "1"
 
-@app.get('/admin')
-def admin():
-    bookings=Booking.query.order_by(Booking.created_at.desc()).all()
-    return render_template('admin.html', bookings=bookings)
+    config = dict(
+        SECRET_KEY=os.environ.get("SECRET_KEY"),
+        SQLALCHEMY_DATABASE_URI=(os.environ.get("DATABASE_URL") or "sqlite:///huanyu.db")
+        .replace("postgres://", "postgresql://", 1),
+        SQLALCHEMY_TRACK_MODIFICATIONS=False,
+        ADMIN_USER=os.environ.get("ADMIN_USER", "admin"),
+        ADMIN_PASSWORD_HASH=os.environ.get("ADMIN_PASSWORD_HASH", ""),
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+        SESSION_COOKIE_SECURE=os.environ.get("SESSION_COOKIE_SECURE", "0" if dev else "1") == "1",
+        PERMANENT_SESSION_LIFETIME=timedelta(hours=8),
+        BOOKING_LIMIT=8, BOOKING_WINDOW=3600,        # 同一個來源每小時最多送 8 筆預約
+        LOGIN_LIMIT=5, LOGIN_WINDOW=900,             # 登入失敗 5 次後鎖 15 分鐘
+        SITE_DIR=str(BASE_DIR / "site"),
+    )
+    config.update(test_config or {})
 
-@app.post('/admin/<int:booking_id>/status')
-def update_status(booking_id):
-    b=Booking.query.get_or_404(booking_id); b.status=request.form.get('status','待確認'); db.session.commit(); return ('',204)
+    if not config["SECRET_KEY"]:
+        if dev or config.get("TESTING"):
+            config["SECRET_KEY"] = secrets.token_hex(32)
+        else:
+            raise RuntimeError(
+                "請設定環境變數 SECRET_KEY（一長串隨機文字）。"
+                "可用這個指令產生：python -c \"import secrets; print(secrets.token_hex(32))\""
+            )
+    app.config.from_mapping(config)
 
-with app.app_context(): db.create_all()
+    if os.environ.get("TRUST_PROXY") == "1":
+        # 放在 Render、Railway 這類代理後面時，才能看到訪客真正的 IP
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
-if __name__=='__main__': app.run(debug=True, host='127.0.0.1', port=5000)
+    app.extensions["booking_limiter"] = security.RateLimiter(config["BOOKING_LIMIT"], config["BOOKING_WINDOW"])
+    app.extensions["login_limiter"] = security.RateLimiter(config["LOGIN_LIMIT"], config["LOGIN_WINDOW"])
+
+    db.init_app(app)
+    with app.app_context():
+        db.create_all()
+        seed_prices(app)
+
+    register_helpers(app)
+    register_public_routes(app)
+    register_admin_routes(app)
+    return app
+
+
+# ------------------------------------------------------------------ 價目資料 ----
+
+
+def seed_prices(app):
+    """第一次啟動時，把 site/data/prices.json 匯入資料庫，成為第一個版本。"""
+    if PriceVersion.query.first():
+        return
+    path = Path(app.config["SITE_DIR"]) / "data" / "prices.json"
+    sheet = pricing.load_sheet_file(path)
+    errors = pricing.validate_sheet(sheet)
+    if errors:
+        raise RuntimeError("初始價目資料有誤：" + "；".join(errors[:5]))
+    db.session.add(PriceVersion(
+        data=json.dumps(sheet, ensure_ascii=False), created_by="系統",
+        note="初始資料（來自 site/data/prices.json）", changes="[]"))
+    db.session.commit()
+
+
+def current_version():
+    return PriceVersion.query.order_by(PriceVersion.id.desc()).first()
+
+
+def current_sheet():
+    version = current_version()
+    return version, json.loads(version.data)
+
+
+def save_version(sheet, note, changes):
+    errors = pricing.validate_sheet(sheet)
+    if errors:                      # 理論上不會發生；萬一發生，寧可不存也不要讓前台壞掉
+        raise pricing.PriceError("價目資料驗證失敗：" + "；".join(errors[:3]))
+    version = PriceVersion(
+        data=json.dumps(sheet, ensure_ascii=False), created_by=session.get("user", ""),
+        note=note[:200], changes=json.dumps(changes, ensure_ascii=False))
+    db.session.add(version)
+    db.session.commit()
+    return version
+
+
+# ------------------------------------------------------------------ 共用小工具 ----
+
+
+def client_ip():
+    return request.remote_addr or "unknown"
+
+
+def register_helpers(app):
+    app.jinja_env.globals["csrf_token"] = security.csrf_token
+    app.jinja_env.globals["csrf_input"] = security.csrf_input
+    app.jinja_env.globals["STATUSES"] = STATUSES
+
+    @app.template_filter("taipei")
+    def taipei(value):
+        """資料庫存的是 UTC，顯示成台北時間。"""
+        return "" if value is None else (value + timedelta(hours=8)).strftime("%Y-%m-%d %H:%M")
+
+    @app.template_filter("money")
+    def money(value):
+        return f"NT$ {int(value):,}"
+
+    @app.template_filter("service_label")
+    def service_label(value):
+        # 舊版 MVP 存的是 pickup（送機）與 dropoff（接機）
+        return {"pickup": "送機", "dropoff": "接機"}.get(value, value)
+
+    @app.after_request
+    def secure_admin_responses(response):
+        if request.path.startswith("/admin"):
+            response.headers["Cache-Control"] = "no-store"
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            response.headers["X-Frame-Options"] = "DENY"
+            response.headers["Referrer-Policy"] = "same-origin"
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; style-src 'self'; script-src 'self'; "
+                "frame-ancestors 'none'; form-action 'self'; base-uri 'none'")
+        return response
+
+    @app.before_request
+    def admin_csrf_guard():
+        if request.path.startswith("/admin") and request.method == "POST":
+            security.verify_csrf()
+
+
+# ------------------------------------------------------------------ 前台 ----
+
+
+def register_public_routes(app):
+    @app.get("/healthz")
+    def healthz():
+        return "ok"
+
+    @app.get("/data/prices.json")
+    def prices_json():
+        response = Response(current_version().data, content_type="application/json; charset=utf-8")
+        response.headers["Cache-Control"] = "no-cache"        # 每次都向伺服器確認，改價後立刻生效
+        return response
+
+    @app.post("/api/bookings")
+    def api_create_booking():
+        if not app.extensions["booking_limiter"].allow(client_ip()):
+            return jsonify(ok=False, message="送出太頻繁，請稍後再試，或直接用 LINE 聯絡我們。"), 429
+        data = request.get_json(silent=True)
+        if not isinstance(data, dict):
+            return jsonify(ok=False, message="資料格式不正確"), 400
+
+        _, sheet = current_sheet()
+        clean, errors = bk.validate_booking(data, sheet)
+        if errors:
+            return jsonify(ok=False, errors=errors, message=errors[0]), 400
+
+        for _ in range(3):                                    # 訂單編號極少數情況會重複，換一個再試
+            booking = Booking(order_no=bk.new_order_no(), **clean)
+            db.session.add(booking)
+            try:
+                db.session.commit()
+                return jsonify(ok=True, order_no=booking.order_no, price=booking.price), 201
+            except IntegrityError:
+                db.session.rollback()
+        return jsonify(ok=False, message="系統忙碌，請稍後再試，或直接用 LINE 聯絡我們。"), 500
+
+    @app.get("/")
+    def site_index():
+        return send_from_directory(app.config["SITE_DIR"], "index.html")
+
+    @app.get("/<path:filename>")
+    def site_file(filename):
+        parts = filename.split("/")
+        if len(parts) == 1:
+            allowed = filename.endswith(".html") or filename in SITE_FILES
+        elif parts[0] in SITE_DIRS:
+            allowed = parts[0] != "data" or (len(parts) == 2 and parts[1] in PUBLIC_DATA)
+        else:
+            allowed = False
+        if not allowed:
+            abort(404)
+        return send_from_directory(app.config["SITE_DIR"], filename)
+
+
+# ------------------------------------------------------------------ 後台 ----
+
+
+def register_admin_routes(app):
+    @app.route("/admin/login", methods=["GET", "POST"])
+    def admin_login():
+        configured = security.admin_configured(app)
+        if session.get("admin"):
+            return redirect(url_for("admin_bookings"))
+        if request.method == "POST":
+            ip = client_ip()
+            limiter = app.extensions["login_limiter"]
+            username = request.form.get("username", "")
+            if limiter.blocked(ip):
+                flash("嘗試次數太多，請 15 分鐘後再試。", "error")
+            elif security.verify_login(app, username, request.form.get("password", "")):
+                limiter.reset(ip)
+                security.start_session(username)
+                return redirect(security.safe_next(request.form.get("next")) or url_for("admin_bookings"))
+            else:
+                limiter.record(ip)
+                flash("帳號或密碼錯誤。", "error")
+        return render_template("admin/login.html", configured=configured,
+                               next=request.values.get("next", ""))
+
+    @app.post("/admin/logout")
+    def admin_logout():
+        session.clear()
+        flash("已登出。", "ok")
+        return redirect(url_for("admin_login"))
+
+    # ---- 訂單 ----
+
+    @app.get("/admin")
+    @security.login_required
+    def admin_bookings():
+        status = request.args.get("status", "")
+        query = Booking.query.order_by(Booking.created_at.desc(), Booking.id.desc())
+        if status in STATUSES:
+            query = query.filter_by(status=status)
+        counts = dict(db.session.query(Booking.status, func.count(Booking.id)).group_by(Booking.status).all())
+        return render_template("admin/bookings.html", bookings=query.limit(300).all(),
+                               status=status, counts=counts, total=sum(counts.values()), active="bookings")
+
+    @app.post("/admin/bookings/<int:booking_id>/status")
+    @security.login_required
+    def admin_booking_status(booking_id):
+        booking = db.get_or_404(Booking, booking_id)
+        status = request.form.get("status", "")
+        if status not in STATUSES:
+            abort(400)
+        booking.status = status
+        db.session.commit()
+        flash(f"訂單 {booking.order_no} 已改為「{status}」。", "ok")
+        back = request.form.get("back", "")
+        return redirect(back if back.startswith("/admin") and not back.startswith("//") else url_for("admin_bookings"))
+
+    # ---- 價格 ----
+
+    @app.route("/admin/prices", methods=["GET", "POST"])
+    @security.login_required
+    def admin_prices():
+        version, sheet = current_sheet()
+        airports, vehicles = sheet["airports"], sheet["vehicles"]
+        airport_id = request.values.get("airport") or airports[0]["id"]
+        vehicle_id = request.values.get("vehicle") or vehicles[0]["id"]
+        try:
+            airport = pricing.find_airport(sheet, airport_id)
+            vehicle = pricing.find_vehicle(sheet, vehicle_id)
+        except pricing.PriceError:
+            abort(404)
+        rows = pricing.price_rows(sheet, airport_id, vehicle_id)
+        context = dict(active="prices", sheet=sheet, version=version, airport=airport, vehicle=vehicle,
+                       rows=rows, row_errors={}, warnings=[], confirm=False)
+
+        if request.method == "POST":
+            if request.form.get("base_version") != str(version.id):
+                flash("價格在你編輯的期間已經被更新，請重新整理後再修改，避免蓋掉別人的修改。", "error")
+                return redirect(url_for("admin_prices", airport=airport_id, vehicle=vehicle_id))
+
+            updates, row_errors, shown = {}, {}, []
+            for row in rows:
+                i = row["index"]
+                raw_send = request.form.get(f"send_{i}", "")
+                raw_pickup = request.form.get(f"pickup_{i}", "")
+                shown.append({**row, "send": raw_send, "pickup": raw_pickup})
+                try:
+                    updates[i] = (pricing.parse_price(raw_send), pricing.parse_price(raw_pickup))
+                except pricing.PriceError as exc:
+                    row_errors[i] = str(exc)
+            context.update(rows=shown, row_errors=row_errors)
+
+            if row_errors:
+                flash(f"有 {len(row_errors)} 列的價格不正確，請修正後再儲存（沒有任何資料被儲存）。", "error")
+                return render_template("admin/prices.html", **context)
+
+            new_sheet = pricing.apply_prices(sheet, airport_id, vehicle_id, updates)
+            changes = pricing.diff_changes(sheet, new_sheet)
+            if not changes:
+                flash("沒有任何價格變動。", "ok")
+                return redirect(url_for("admin_prices", airport=airport_id, vehicle=vehicle_id))
+
+            warnings = pricing.soft_warnings(sheet, new_sheet)
+            if warnings and request.form.get("confirm") != "1":
+                context.update(warnings=warnings, confirm=True)
+                return render_template("admin/prices.html", **context)
+
+            note = f"{airport['name']}｜{vehicle['name']}：更新 {len(changes)} 筆價格"
+            saved = save_version(new_sheet, note, changes)
+            flash(f"已儲存（版本 #{saved.id}）：{note}。前台網站已經套用新價格。", "ok")
+            return redirect(url_for("admin_prices", airport=airport_id, vehicle=vehicle_id))
+
+        return render_template("admin/prices.html", **context)
+
+    @app.get("/admin/prices/history")
+    @security.login_required
+    def admin_prices_history():
+        versions = PriceVersion.query.order_by(PriceVersion.id.desc()).limit(100).all()
+        history = []
+        for v in versions:
+            history.append({"v": v, "changes": json.loads(v.changes or "[]")})
+        return render_template("admin/history.html", history=history, current_id=versions[0].id,
+                               active="history")
+
+    @app.post("/admin/prices/restore/<int:version_id>")
+    @security.login_required
+    def admin_prices_restore(version_id):
+        old = db.get_or_404(PriceVersion, version_id)
+        current = current_version()
+        if old.id == current.id:
+            flash("這已經是目前使用的版本。", "ok")
+            return redirect(url_for("admin_prices_history"))
+        old_sheet, current_sheet_ = json.loads(old.data), json.loads(current.data)
+        changes = pricing.diff_changes(current_sheet_, old_sheet)
+        try:
+            saved = save_version(old_sheet, f"還原到版本 #{old.id}", changes)
+        except pricing.PriceError as exc:
+            flash(str(exc), "error")
+            return redirect(url_for("admin_prices_history"))
+        flash(f"已還原到版本 #{old.id} 的價格（新版本 #{saved.id}）。", "ok")
+        return redirect(url_for("admin_prices_history"))
+
+
+if __name__ == "__main__":
+    os.environ.setdefault("FLASK_DEBUG", "1")      # 本機開發用；正式環境請用 gunicorn wsgi:app
+    create_app().run(debug=True, host="127.0.0.1", port=5000)

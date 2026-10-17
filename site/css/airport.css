@@ -1,0 +1,309 @@
+/* 機場風：載入在 style.css 之後，只放新版頁面（首頁、機場頁）需要的樣式。
+   風格原則：深藍底 + 計程車黃，像航廈指示牌與航班資訊看板；數字要大、對比要高。 */
+
+/* ===== 導覽：像登機門指示牌，目前所在頁面是黃色牌子 ===== */
+.sign-header .nav { gap: .25rem; }
+.sign-header .nav a { padding: .3rem .7rem; border-radius: 6px; color: rgba(255,255,255,.88); }
+.sign-header .nav a:hover { color: var(--white); background: rgba(255,255,255,.1); text-decoration: none; }
+.sign-header .nav a[aria-current="page"] { background: var(--taxi); color: var(--navy); font-weight: 700; }
+
+/* 導覽項目較多：寬度不夠時換到第二排 */
+@media (min-width: 800px) and (max-width: 1099px) {
+  .sign-header .nav { order: 3; width: 100%; margin: 0; }
+  .sign-header .header-call { margin-left: auto; }
+}
+
+/* 頁首底下的跑道虛線 */
+.runway {
+  height: 5px;
+  background: repeating-linear-gradient(90deg, var(--taxi) 0 26px, transparent 26px 50px);
+  opacity: .9;
+}
+
+/* ===== 登機門卡片：用機場代碼當標示 ===== */
+.gates { margin-top: 1.5rem; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.gate {
+  display: grid; gap: .2rem; padding: 1.25rem 1.4rem 1.1rem;
+  background: var(--navy); color: var(--white); text-decoration: none;
+  border: 2px solid transparent; border-radius: 14px;
+}
+.gate:hover { border-color: var(--taxi); }
+.gate-code { font-family: var(--num); font-weight: 700; font-size: 3.75rem; line-height: .95; letter-spacing: .04em; color: var(--taxi); }
+.gate-name { margin-top: .35rem; font-size: 1.15rem; font-weight: 700; }
+.gate-price { color: rgba(255,255,255,.82); }
+.gate-price b { font-family: var(--num); font-weight: 600; font-size: 1.45rem; color: var(--white); }
+.gate-go { margin-top: .6rem; font-weight: 700; color: var(--taxi); }
+.more { margin-top: 1.5rem; }
+
+/* ===== 機場頁標題區 ===== */
+.page-head { padding-block: 1.75rem 2.5rem; }
+.page-head-grid { display: grid; gap: .5rem 2rem; align-items: end; }
+.airport-code { font-family: var(--num); font-weight: 700; font-size: clamp(4.5rem, 20vw, 7.5rem); line-height: .85; letter-spacing: .05em; color: var(--taxi); }
+.page-head h1 { font-size: clamp(1.6rem, 5vw, 2.4rem); line-height: 1.3; }
+.page-head .lede { margin-top: .5rem; max-width: 36rem; color: rgba(255,255,255,.84); font-size: 1.05rem; }
+@media (min-width: 800px) {
+  .page-head { padding-block: 2.25rem 3rem; }
+  .page-head-grid { grid-template-columns: auto 1fr; }
+}
+
+/* ===== 航班資訊看板風格的價目表 ===== */
+.board-section { padding-top: 2rem; }
+.board-panel { background: #070B2E; color: var(--white); border-radius: 16px; padding: 1.1rem; }
+@media (min-width: 800px) { .board-panel { padding: 1.75rem 2rem; } }
+.board-panel :focus-visible { outline-color: var(--white); }
+
+.board-controls { display: grid; gap: .5rem; }
+.board-label { font-size: .9rem; color: rgba(255,255,255,.7); }
+.gate-tabs { display: grid; gap: .5rem; grid-template-columns: repeat(2, 1fr); }
+@media (min-width: 720px) { .gate-tabs { grid-template-columns: repeat(4, 1fr); } }
+.gate-tabs button {
+  display: grid; align-content: center; gap: .1rem; min-height: 56px; padding: .45rem .8rem;
+  font: inherit; font-weight: 700; line-height: 1.3; text-align: left;
+  color: var(--white); background: var(--navy-soft);
+  border: 2px solid transparent; border-radius: 10px; cursor: pointer;
+}
+.gate-tabs button:hover { border-color: rgba(255,255,255,.5); }
+.gate-tabs small { font-weight: 400; font-size: .8rem; color: rgba(255,255,255,.72); }
+.gate-tabs button[aria-pressed="true"] { background: var(--taxi); color: var(--navy); }
+.gate-tabs button[aria-pressed="true"] small { color: rgba(11,19,64,.78); }
+
+.board-hint { margin: 1rem 0 .25rem; font-size: .9rem; color: rgba(255,255,255,.7); }
+.board-scroll { overflow-x: auto; }
+.board-table { width: 100%; border-collapse: collapse; }
+.board-table th, .board-table td { padding: .55rem .5rem; text-align: left; border-bottom: 1px solid rgba(255,255,255,.12); }
+.board-table thead th { font-size: .85rem; font-weight: 500; color: rgba(255,255,255,.65); }
+.board-table .num { width: 8.25rem; text-align: right; font-family: var(--num); font-weight: 600; font-size: 1.75rem; line-height: 1.3; color: var(--taxi); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.board-table thead .num { font-family: var(--sans); font-size: .85rem; font-weight: 500; color: rgba(255,255,255,.65); }
+.board-table tr.group th { padding-top: 1.25rem; font-size: .95rem; font-weight: 700; color: var(--taxi); border-bottom-color: rgba(255,199,44,.5); }
+.board-table .row-pick {
+  display: block; width: 100%; padding: .35rem 0; font: inherit; line-height: 1.5; text-align: left;
+  color: var(--white); background: none; border: 0; cursor: pointer; text-decoration: none;
+}
+.board-table tbody tr:not(.group):hover td { background: rgba(255,255,255,.06); }
+.board-table tr.is-selected td { background: var(--taxi); color: var(--navy); border-bottom-color: var(--taxi); }
+.board-table tr.is-selected .row-pick, .board-table tr.is-selected .num { color: var(--navy); }
+
+/* Alphard 尊爵：第二塊看板 */
+.board-premium { margin-top: 1.5rem; max-width: 36rem; }
+.board-premium h2 { font-size: 1.25rem; }
+.premium-caption { margin-bottom: .75rem; font-size: .92rem; color: rgba(255,255,255,.7); }
+.board-table-simple .num { width: 8rem; }
+.board-table-simple tbody tr:last-child td { border-bottom: 0; }
+
+.board-notes { margin-top: 1.25rem; }
+.ask { margin-top: 2rem; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem 1.5rem; padding: 1.1rem 1.4rem; background: var(--white); border-radius: 12px; }
+.ask p { font-weight: 500; }
+.ask-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+
+/* 手機：地區名一整行，送機、接機價並排在下方 */
+@media (max-width: 639px) {
+  .board-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .board-table, .board-table tbody, .board-table tr, .board-table td, .board-table th { display: block; }
+  .board-table tr.group th { padding: 1.1rem .5rem .4rem; }
+  .board-table tbody tr:not(.group) { display: grid; grid-template-columns: 1fr 1fr; padding: .35rem 0 .6rem; border-bottom: 1px solid rgba(255,255,255,.12); }
+  .board-table tbody tr:not(.group) td { padding: 0 .5rem; border: 0; }
+  .board-table td:first-child { grid-column: 1 / -1; }
+  .board-table td.num { display: flex; align-items: baseline; gap: .5rem; width: auto; text-align: left; }
+  .board-table td.num::before { content: attr(data-label); font-family: var(--sans); font-size: .85rem; font-weight: 400; color: rgba(255,255,255,.65); }
+  .board-table tr.is-selected { background: var(--taxi); border-radius: 10px; border-bottom-color: transparent; }
+  .board-table tr.is-selected td { background: transparent; }
+  .board-table tr.is-selected td.num::before { color: rgba(11,19,64,.7); }
+  .board-table-simple tbody tr { display: grid; grid-template-columns: 1fr auto; padding: .5rem 0; }
+  .board-table-simple td.num::before { content: none; }
+}
+
+/* ===== 選了地區後出現的預約列 ===== */
+.quote-bar {
+  position: fixed; left: 0; right: 0; z-index: 30;
+  bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+  background: var(--white); border-top: 3px solid var(--taxi);
+  box-shadow: 0 -8px 24px rgba(11,19,64,.2);
+}
+.quote-bar-inner { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: .5rem .75rem; padding-block: .65rem; }
+.qb-info { grid-column: 1 / -1; min-width: 0; }
+.quote-bar .btn { grid-column: 1 / -1; }
+.qb-area { font-weight: 700; color: var(--navy); line-height: 1.4; font-size: .95rem; }
+.qb-vehicle { font-size: .85rem; color: var(--muted); }
+.qb-dir { flex-wrap: nowrap; }
+.qb-dir label > span { min-height: 44px; padding-inline: .9rem; white-space: nowrap; }
+.quote-bar .btn { white-space: nowrap; }
+.qb-price { display: flex; align-items: baseline; justify-content: flex-end; gap: .3rem; color: var(--navy); line-height: 1; }
+.qb-price .cur { font-family: var(--num); font-weight: 600; font-size: 1.1rem; }
+.qb-price b { font-family: var(--num); font-weight: 700; font-size: 2.4rem; font-variant-numeric: tabular-nums; }
+body.has-quote-bar { padding-bottom: calc(60px + 200px + env(safe-area-inset-bottom, 0px)); }
+
+@media (min-width: 720px) {
+  .quote-bar { bottom: 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .quote-bar-inner { grid-template-columns: 1fr auto auto auto; gap: 1.25rem; }
+  .qb-info { grid-column: auto; }
+  .quote-bar .btn { grid-column: auto; }
+  .qb-price b { font-size: 2.75rem; }
+  body.has-quote-bar { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* =========================================================================
+   以下是第二批：座位行李圖示、起降圖示、路線圖、服務原則看板、夜間天空
+   ========================================================================= */
+
+/* ===== 座位與行李圖示 ===== */
+.cap { display: grid; gap: .15rem; margin-top: .3rem; color: var(--muted); }
+.cap-row { display: flex; flex-wrap: wrap; gap: 2px; line-height: 0; }
+.cap-icon { width: 14px; height: 14px; fill: currentColor; flex: none; }
+.cap-bags .cap-icon { opacity: .6; }
+.fleet-item .cap { margin-top: .35rem; }
+.gate-tabs .cap { color: rgba(255,255,255,.78); }
+.gate-tabs button[aria-pressed="true"] .cap { color: rgba(11,19,64,.82); }
+
+/* ===== 起降圖示：送機 Departure、接機 Arrival ===== */
+.lbl { display: inline-flex; align-items: center; }
+.plane { width: 15px; height: 15px; fill: currentColor; flex: none; vertical-align: -2px; margin-right: .3rem; }
+.plane-up { transform: rotate(-40deg); }
+.plane-down { transform: rotate(40deg); }
+.seg label > span small { display: block; }
+.dir { display: inline-flex; flex-direction: column; align-items: flex-end; line-height: 1.25; }
+.dir small { font-size: .72rem; font-weight: 400; letter-spacing: .04em; }
+.board-table thead .num .dir small { font-family: var(--sans); color: rgba(255,255,255,.55); }
+
+/* ===== 路線圖 / 價目表切換 ===== */
+.view-tabs { margin-top: 1.1rem; display: inline-flex; padding: 3px; gap: 3px; background: var(--navy-soft); border-radius: 12px; }
+.view-tabs button {
+  min-height: 44px; padding: .4rem 1.1rem; font: inherit; font-weight: 700; color: rgba(255,255,255,.85);
+  background: transparent; border: 0; border-radius: 9px; cursor: pointer;
+}
+.view-tabs button:hover { color: var(--white); }
+.view-tabs button[aria-pressed="true"] { background: var(--white); color: var(--navy); }
+
+/* 看板裡的送機 / 接機切換：改成深色版 */
+.board-panel .seg { background: var(--navy-soft); border-color: transparent; }
+.board-panel .seg label > span { color: var(--white); }
+.board-panel .seg label + label { border-left-color: rgba(255,255,255,.18); }
+.board-panel .seg small { color: rgba(255,255,255,.7); }
+.board-panel .seg input:checked + span { background: var(--taxi); color: var(--navy); }
+.board-panel .seg input:checked + span small { color: rgba(11,19,64,.78); }
+.board-panel .seg input:focus-visible + span { outline-color: var(--white); }
+
+.map-head { margin-top: 1rem; display: grid; gap: .75rem; align-items: end; }
+.map-head .board-hint { margin: 0; }
+.dir-toggle { justify-self: start; }
+@media (min-width: 720px) {
+  .map-head { grid-template-columns: 1fr auto; }
+  .dir-toggle { justify-self: end; }
+}
+
+/* ===== 路線圖：像地鐵路線，從機場出發沿線一站一站標價 ===== */
+.route-grid { margin-top: 1.25rem; display: grid; gap: 1.75rem 2rem; }
+@media (min-width: 720px) { .route-grid { grid-template-columns: repeat(2, 1fr); } }
+.route-name { font-size: 1.05rem; color: var(--taxi); margin-bottom: .6rem; }
+.route-stops { position: relative; display: grid; padding-left: 2.1rem; list-style: none; }
+.route-stops::before {                      /* 沿線的黃色線 */
+  content: ""; position: absolute; left: .78rem; top: .9rem; bottom: .9rem; width: 5px;
+  background: var(--taxi); border-radius: 3px;
+}
+.route-start { position: relative; padding-block: .1rem .55rem; }
+.route-start span { font-family: var(--num); font-weight: 700; font-size: 1.15rem; letter-spacing: .08em; color: var(--taxi); }
+.route-start::before {                      /* 機場起點 */
+  content: ""; position: absolute; left: -1.82rem; top: .25rem; width: 1.2rem; height: 1.2rem;
+  background: var(--taxi); border: 4px solid #070B2E; border-radius: 50%; box-shadow: 0 0 0 3px var(--taxi);
+}
+.route-stops li { position: relative; }
+.stop {
+  position: relative; display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; width: 100%;
+  min-height: 48px; padding: .45rem .75rem; font: inherit; text-align: left;
+  color: var(--white); background: transparent; border: 0; border-radius: 10px; cursor: pointer;
+}
+.stop::before {                             /* 站點圓圈 */
+  content: ""; position: absolute; left: -1.62rem; top: 50%; width: .9rem; height: .9rem; margin-top: -.45rem;
+  background: #070B2E; border: 3px solid var(--taxi); border-radius: 50%;
+}
+.stop:hover { background: rgba(255,255,255,.08); }
+.stop-name { font-weight: 500; font-size: 1.05rem; }
+.stop-price { font-family: var(--num); font-weight: 600; font-size: 1.6rem; line-height: 1.2; color: var(--taxi); font-variant-numeric: tabular-nums; }
+.stop[aria-pressed="true"] { background: var(--taxi); color: var(--navy); }
+.stop[aria-pressed="true"] .stop-price { color: var(--navy); }
+.stop[aria-pressed="true"]::before { background: var(--white); border-color: var(--taxi); }
+
+/* ===== 服務原則看板（首頁） ===== */
+.delay-board th small { display: block; font-size: .72rem; font-weight: 400; letter-spacing: .04em; color: rgba(255,255,255,.5); }
+.delay-board td { padding-block: .85rem; vertical-align: baseline; }
+.delay-board tbody tr:last-child td { border-bottom: 0; }
+.delay-board .status { font-family: var(--num); font-weight: 600; font-size: 1.3rem; letter-spacing: .08em; color: var(--taxi); white-space: nowrap; }
+.delay-board td:last-child { color: var(--white); font-weight: 500; }
+.delay-board td:first-child { font-weight: 700; }
+@media (max-width: 639px) {
+  .delay-board thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .delay-board, .delay-board tbody, .delay-board tr, .delay-board td { display: block; }
+  .delay-board tbody tr { padding: .75rem .25rem; border-bottom: 1px solid rgba(255,255,255,.12); }
+  .delay-board tbody tr:last-child { border-bottom: 0; }
+  .delay-board td { padding: 0; border: 0; }
+  .delay-board .status { font-size: 1.05rem; }
+}
+
+/* ===== 夜間（台灣時間 22:00 至 06:00）：天空變深、出現星點 ===== */
+.night-note { margin-top: .75rem; font-weight: 500; color: var(--taxi); }
+.is-night .site-header, .is-night .hero, .is-night .page-head { background-color: #060924; }
+.is-night .hero, .is-night .page-head {
+  background-repeat: no-repeat;
+  background-image:
+    radial-gradient(circle at 86% 24%, rgba(255,255,255,.9) 0 1.2px, transparent 1.8px),
+    radial-gradient(circle at 92% 58%, rgba(255,255,255,.7) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 74% 16%, rgba(255,255,255,.6) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 63% 46%, rgba(255,255,255,.5) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 96% 82%, rgba(255,255,255,.8) 0 1.2px, transparent 1.8px),
+    radial-gradient(circle at 81% 76%, rgba(255,255,255,.5) 0 1px, transparent 1.6px);
+}
+
+#delay .board-panel { margin-top: 1.5rem; }
+
+/* 舊版 style.css 用 #vehicle-tabs 這個 ID 設定了框線；新頁面用同一個 ID，這裡蓋掉它 */
+.gate-tabs#vehicle-tabs button,
+.gate-tabs#vehicle-tabs button:nth-child(even),
+.gate-tabs#vehicle-tabs button:nth-child(n+3) { border: 2px solid transparent; }
+.gate-tabs#vehicle-tabs button:hover { border-color: rgba(255,255,255,.5); }
+.gate-tabs#vehicle-tabs button[aria-pressed="true"]:hover { border-color: var(--white); }
+
+/* =========================================================================
+   第三批：獨立頁面（車隊、服務須知、預約、司機招募）
+   ========================================================================= */
+
+/* 首頁試算票根與機場頁預約列：連到預約頁的小連結 */
+.stub-more { justify-self: center; margin-top: .15rem; font-weight: 500; color: var(--navy); text-underline-offset: 4px; }
+@media (max-width: 799px) { .stub-more { display: none; } }
+.qb-more { margin-left: .5rem; font-weight: 500; color: var(--navy); text-underline-offset: 3px; white-space: nowrap; }
+
+/* 底色是淺灰的區塊裡，聯絡卡片改白底 */
+.contact-list-paper .contact-item { background: var(--white); }
+
+/* ===== 預約頁 ===== */
+.booking-page { display: grid; gap: 2.5rem; }
+.trip { padding: 1.25rem; background: var(--white); border-radius: 16px; }
+.trip h2, .passenger h2 { font-size: clamp(1.4rem, 4vw, 1.75rem); }
+.trip-form { margin-top: 1rem; display: grid; gap: 1.25rem; }
+.trip-price { margin-top: 1.25rem; padding: 1rem 1.25rem; background: var(--taxi-tint); border: 2px dashed #E4C766; border-radius: 14px; color: var(--navy); }
+.trip-label { font-size: .9rem; color: var(--muted); }
+.trip-desc { margin-top: .5rem; font-size: .92rem; color: var(--muted); }
+.trip-note { margin-top: .5rem; font-size: .85rem; color: var(--muted); }
+.passenger .form { margin-top: 1.25rem; }
+@media (min-width: 900px) {
+  .booking-page { grid-template-columns: 1fr 1.2fr; gap: 3rem; align-items: start; }
+  .trip { padding: 1.75rem; }
+}
+
+/* ===== 司機招募 ===== */
+.offer-badge { display: inline-block; padding: .45rem 1.1rem; font-size: clamp(1.25rem, 4vw, 1.6rem); font-weight: 700; line-height: 1.4; color: var(--navy); background: var(--taxi); border-radius: 10px; }
+.recruit-light { margin-top: 2rem; display: grid; gap: 2rem; }
+.recruit-light h3 { margin-bottom: .6rem; font-size: 1.2rem; color: var(--navy); }
+.checks-light li { color: var(--ink); }
+.checks-light li::before { border-color: var(--navy); }
+@media (min-width: 800px) { .recruit-light { grid-template-columns: 1fr 1fr; gap: 3rem; } }
+
+/* ===== 重要公告（服務須知頁） ===== */
+.notice-grid { margin-top: 1.25rem; display: grid; gap: 1rem; }
+.notice-item { padding: 1.25rem 1.4rem; background: var(--white); border-left: 6px solid var(--taxi); border-radius: 14px; }
+.notice-item h3 { margin-bottom: .5rem; font-size: 1.15rem; color: var(--navy); }
+.notice-item p + p { margin-top: .75rem; }
+.statement { margin-top: 1rem; padding: 1.4rem 1.5rem; border-radius: 14px; }
+.statement h3 { margin-bottom: .5rem; font-size: 1.2rem; color: var(--taxi); }
+.statement p { color: rgba(255,255,255,.92); }
+.statement p + p { margin-top: .75rem; }
+.signature { margin-top: 1.25rem; text-align: right; color: var(--muted); }
+@media (min-width: 900px) { .notice-grid { grid-template-columns: repeat(3, 1fr); align-items: start; } }

@@ -1,0 +1,40 @@
+{% extends "admin/base.html" %}
+{% block title %}價格紀錄{% endblock %}
+{% block content %}
+<h1>價格修改紀錄</h1>
+<p class="muted small">每次儲存都會留下一個版本。還原不會刪除任何紀錄，而是用舊價格建立一個新版本。</p>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>版本</th><th>時間</th><th>修改者</th><th>內容</th><th></th></tr></thead>
+    <tbody>
+    {% for h in history %}
+      <tr>
+        <td><b>#{{ h.v.id }}</b>{% if h.v.id == current_id %}<br><span class="status">目前使用</span>{% endif %}</td>
+        <td>{{ h.v.created_at|taipei }}</td>
+        <td>{{ h.v.created_by or '—' }}</td>
+        <td>
+          {{ h.v.note }}
+          {% if h.changes %}
+          <details><summary>查看 {{ h.changes|length }} 筆變動</summary>
+            <ul>
+              {% for c in h.changes[:50] %}
+                <li>{{ c.airport }}｜{{ c.vehicle }}｜{{ c.area }}　{{ c.field }} {{ '{:,}'.format(c.old) if c.old is not none else '—' }} → {{ '{:,}'.format(c.new) }}</li>
+              {% endfor %}
+              {% if h.changes|length > 50 %}<li>…還有 {{ h.changes|length - 50 }} 筆</li>{% endif %}
+            </ul>
+          </details>
+          {% endif %}
+        </td>
+        <td>
+          {% if h.v.id != current_id %}
+          <form method="post" action="{{ url_for('admin_prices_restore', version_id=h.v.id) }}">
+            {{ csrf_input() }}<button class="btn small ghost" type="submit">還原到這版</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

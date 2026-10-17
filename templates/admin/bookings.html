@@ -1,0 +1,47 @@
+{% extends "admin/base.html" %}
+{% block title %}訂單{% endblock %}
+{% block content %}
+<h1>預約訂單</h1>
+<div class="tabs" aria-label="依狀態篩選">
+  <a href="{{ url_for('admin_bookings') }}" class="{{ 'on' if not status }}">全部（{{ total }}）</a>
+  {% for s in STATUSES %}
+    <a href="{{ url_for('admin_bookings', status=s) }}" class="{{ 'on' if status == s }}">{{ s }}（{{ counts.get(s, 0) }}）</a>
+  {% endfor %}
+</div>
+<p class="muted small">這裡只是紀錄與追蹤；正式預約仍以官方 LINE 客服核對航班、日期與時間為準。</p>
+<div class="table-wrap">
+  <table class="stack-table">
+    <thead><tr><th>訂單</th><th>乘車時間</th><th>客戶</th><th>行程</th><th>人數／行李</th><th>金額</th><th>狀態</th></tr></thead>
+    <tbody>
+    {% for b in bookings %}
+      <tr>
+        <td data-label="訂單"><b>{{ b.order_no }}</b><br><span class="muted small">{{ b.created_at|taipei }} 建立</span></td>
+        <td data-label="乘車時間">{{ b.date }}<br>{{ b.time }}</td>
+        <td data-label="客戶">{{ b.name }}<br><a href="tel:{{ b.phone }}">{{ b.phone }}</a></td>
+        <td data-label="行程">
+          {{ b.service_type|service_label }}｜{{ b.airport }}<br>{{ b.area }}<br>{{ b.vehicle }}
+          <br><span class="muted small">地址：{{ b.address }}</span>
+          {% if b.flight %}<br><span class="muted small">航班：{{ b.flight }}</span>{% endif %}
+          {% if b.note %}<br><span class="muted small">備註：{{ b.note }}</span>{% endif %}
+        </td>
+        <td data-label="人數／行李">{{ b.passengers }} 人<br>{{ b.luggage or 0 }} 件</td>
+        <td data-label="金額">{{ b.price|money }}</td>
+        <td data-label="狀態">
+          <form method="post" action="{{ url_for('admin_booking_status', booking_id=b.id) }}" class="inline">
+            {{ csrf_input() }}
+            <input type="hidden" name="back" value="{{ request.full_path.rstrip('?') }}">
+            <select name="status" aria-label="訂單狀態">
+              {% for s in STATUSES %}<option {{ 'selected' if b.status == s }}>{{ s }}</option>{% endfor %}
+            </select>
+            <button class="btn small ghost" type="submit">更新</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="7" class="muted">目前沒有訂單。</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if bookings|length == 300 %}<p class="muted small">只顯示最新的 300 筆。</p>{% endif %}
+{% endblock %}

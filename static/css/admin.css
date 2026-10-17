@@ -1,0 +1,62 @@
+:root { --navy:#0B1340; --taxi:#FFC72C; --paper:#F3F4F8; --line:#D6D9E3; --muted:#565C70; --ink:#151824; --ok:#14683a; --bad:#a31621; --warn:#7a5200; }
+* { box-sizing: border-box; }
+body { margin:0; font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif; color:var(--ink); background:var(--paper); line-height:1.6; }
+.wrap { width:min(100% - 2rem, 1180px); margin-inline:auto; }
+.bar { background:var(--navy); color:#fff; }
+.bar .wrap { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem 1.25rem; padding-block:.75rem; }
+.brand { font-weight:700; margin-right:auto; }
+.bar nav { display:flex; gap:.25rem; flex-wrap:wrap; }
+.bar nav a { color:rgba(255,255,255,.88); text-decoration:none; padding:.3rem .8rem; border-radius:6px; }
+.bar nav a.on { background:var(--taxi); color:var(--navy); font-weight:700; }
+.bar form { margin:0; }
+.link { color:rgba(255,255,255,.88); background:none; border:0; font:inherit; cursor:pointer; text-decoration:underline; padding:0; }
+main { padding-block:1.5rem 3rem; }
+h1 { font-size:1.6rem; margin:.25rem 0 1rem; }
+h2 { font-size:1.2rem; }
+.muted { color:var(--muted); }
+.flash { padding:.75rem 1rem; border-radius:8px; margin-bottom:1rem; border:1.5px solid; background:#fff; }
+.flash.ok { border-color:var(--ok); color:var(--ok); }
+.flash.error { border-color:var(--bad); color:var(--bad); }
+.flash.warn { border-color:#c98b00; color:var(--warn); background:#fff8e1; }
+.tabs { display:flex; flex-wrap:wrap; gap:.4rem; margin:.5rem 0 1rem; }
+.tabs a { padding:.4rem .9rem; border:1.5px solid var(--line); border-radius:999px; background:#fff; color:var(--ink); text-decoration:none; font-weight:500; }
+.tabs a.on { background:var(--navy); border-color:var(--navy); color:#fff; }
+.card { background:#fff; border:1.5px solid var(--line); border-radius:12px; padding:1rem 1.25rem; }
+.table-wrap { overflow-x:auto; background:#fff; border:1.5px solid var(--line); border-radius:12px; }
+table { width:100%; border-collapse:collapse; min-width:720px; }
+th, td { padding:.6rem .8rem; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; }
+th { background:var(--paper); font-weight:500; color:var(--muted); font-size:.9rem; white-space:nowrap; }
+tr:last-child td { border-bottom:0; }
+tr.group td { background:var(--navy); color:#fff; font-weight:700; padding-block:.35rem; }
+tr.bad td { background:#fdecee; }
+input, select, button { font:inherit; }
+input[type=text], input[type=password], input[type=number], select { padding:.5rem .6rem; border:1.5px solid var(--line); border-radius:8px; background:#fff; }
+input[type=number] { width:7.5rem; text-align:right; }
+.btn { display:inline-block; padding:.55rem 1.1rem; border:2px solid var(--navy); border-radius:8px; background:var(--navy); color:#fff; font-weight:700; cursor:pointer; text-decoration:none; }
+.btn.ghost { background:#fff; color:var(--navy); }
+.btn.small { padding:.3rem .7rem; font-size:.9rem; }
+.btn.warn { background:#c98b00; border-color:#c98b00; }
+.err { color:var(--bad); font-size:.85rem; display:block; }
+.login { max-width:380px; margin:3rem auto; }
+.login label { display:block; margin-top:.9rem; font-weight:500; }
+.login input { width:100%; margin-top:.3rem; }
+.inline { display:flex; gap:.4rem; align-items:center; margin:0; }
+.status { display:inline-block; padding:.1rem .6rem; border-radius:999px; font-size:.85rem; background:var(--paper); border:1px solid var(--line); }
+.sticky-actions { position:sticky; bottom:0; background:var(--paper); padding:.75rem 0; display:flex; gap:.75rem; align-items:center; flex-wrap:wrap; }
+details summary { cursor:pointer; color:var(--navy); }
+details ul { margin:.4rem 0 0; padding-left:1.1rem; font-size:.9rem; }
+.small { font-size:.9rem; }
+
+td a[href^="tel:"] { color: var(--navy); }
+.btn.small, .inline select { white-space: nowrap; }
+.stack-table td[data-label="乘車時間"], .stack-table td[data-label="金額"] { white-space: nowrap; }
+
+/* 手機：每筆訂單變成一張卡片 */
+@media (max-width: 720px) {
+  .stack-table { min-width: 0; }
+  .stack-table thead { display: none; }
+  .stack-table, .stack-table tbody, .stack-table tr, .stack-table td { display: block; }
+  .stack-table tr { padding: .5rem 0; border-bottom: 10px solid var(--paper); }
+  .stack-table td { border: 0; padding: .3rem .9rem; white-space: normal !important; }
+  .stack-table td::before { content: attr(data-label); display: block; font-size: .8rem; color: var(--muted); }
+}

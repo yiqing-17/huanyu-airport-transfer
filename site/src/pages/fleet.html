@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+{{> head}}
+</head>
+<body>
+{{> header}}
+{{> page_head}}
+
+<main id="main">
+  <section class="section">
+    <div class="wrap">
+      <p class="section-lede">需要 Alphard、LM、進口轎車、大 T 保母車或小巴以上遊覽車，請加官方 LINE 詢問。</p>
+      <div class="fleet" id="fleet-grid"></div>
+      <p class="error" id="fleet-error" role="alert" hidden>
+        無法載入車隊資料。請用本機伺服器開啟網站（做法在 README），不要直接點兩下開啟檔案。
+      </p>
+
+      <h2 class="sub">實車照片</h2>
+      <div class="real-photos">
+          <figure><img src="images/real-sedan.webp" alt="國產五人座轎車的外觀、後座與行李廂" width="298" height="378" loading="lazy"><figcaption>國產五人座轎車</figcaption></figure>
+          <figure><img src="images/real-suv.webp" alt="國產五人座休旅車的外觀、後座與行李廂" width="298" height="378" loading="lazy"><figcaption>國產五人座休旅車</figcaption></figure>
+          <figure><img src="images/real-van.webp" alt="九人座商務車的車內座椅與行李空間" width="298" height="378" loading="lazy"><figcaption>九人座商務車</figcaption></figure>
+        </div>
+
+      <div class="ask">
+        <p>想知道哪一款車適合你的行程？</p>
+        <div class="ask-actions">
+          <a class="btn btn-navy" data-link="line" target="_blank" rel="noopener">用 LINE 詢問</a>
+          <a class="btn btn-outline" data-link="phone">撥打電話</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+{{> footer}}
+
+<script src="js/config.js"></script>
+<script src="js/site.js"></script>
+<script src="js/fleet.js"></script>
+</body>
+</html>

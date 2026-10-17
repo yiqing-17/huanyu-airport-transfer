@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+{{> head}}
+</head>
+<body>
+{{> header}}
+{{> page_head}}
+
+<main id="main">
+  <section class="section">
+    <div class="wrap booking-page">
+
+      <div class="trip">
+        <h2>行程</h2>
+        <form class="trip-form" id="trip" autocomplete="off">
+          <fieldset class="field">
+            <legend>要搭哪一種</legend>
+            <div class="seg">
+              <label><input type="radio" name="dir" value="send" checked><span><span class="lbl">{{> plane_up}}送機</span><small>Departure</small></span></label>
+              <label><input type="radio" name="dir" value="pickup"><span><span class="lbl">{{> plane_down}}接機</span><small>Arrival</small></span></label>
+            </div>
+          </fieldset>
+
+          <div class="field-row">
+            <label class="field">
+              <span class="field-label">機場</span>
+              <select id="airport"></select>
+            </label>
+            <label class="field">
+              <span class="field-label">上下車地區</span>
+              <select id="area"></select>
+              <span class="field-note" id="area-full" hidden></span>
+            </label>
+          </div>
+
+          <fieldset class="field">
+            <legend>車型</legend>
+            <div class="chips" id="vehicle-chips"></div>
+          </fieldset>
+
+          <p class="error js-error" role="alert" hidden>
+            無法載入價目資料。請用本機伺服器開啟網站（做法在 README），不要直接點兩下開啟檔案。
+          </p>
+        </form>
+
+        <div class="trip-price" aria-live="polite">
+          <p class="trip-label">這一趟</p>
+          <p class="price"><span class="cur">NT$</span><b id="price">—</b></p>
+          <p class="trip-desc" id="price-desc"></p>
+          <p class="trip-note">價格為參考，實際金額以客服報價為準。</p>
+        </div>
+      </div>
+
+      <div class="passenger">
+        <h2>乘客資料</h2>
+        <p class="section-lede">所有預約須透過官方 LINE@ 完成，客服會再核對航班、日期與時間。</p>
+        <p class="section-lede hint">請確認班機時間是清晨 AM 還是下午 PM，長程航班抵台也要注意是否跨日。</p>
+        <p class="section-lede hint">預約前請先看<a class="text-link" href="{{href_terms}}#notice">重要公告</a>，了解客服與預約流程。</p>
+
+        <form class="form" id="booking-form">
+          <label class="field">
+            <span class="field-label">姓名</span>
+            <input type="text" id="f-name" name="name" autocomplete="name" required>
+          </label>
+          <label class="field">
+            <span class="field-label">聯絡電話</span>
+            <input type="tel" id="f-phone" name="phone" autocomplete="tel" inputmode="tel" required>
+          </label>
+          <label class="field">
+            <span class="field-label">日期</span>
+            <input type="date" id="f-date" name="date" required>
+          </label>
+          <label class="field">
+            <span class="field-label" id="l-time">上車時間</span>
+            <input type="time" id="f-time" name="time" required>
+          </label>
+          <label class="field field-wide">
+            <span class="field-label" id="l-address">上車地址</span>
+            <input type="text" id="f-address" name="address" autocomplete="street-address" required>
+          </label>
+          <label class="field">
+            <span class="field-label" id="l-flight">起飛航班（選填）</span>
+            <input type="text" id="f-flight" name="flight" placeholder="例：BR 123">
+          </label>
+          <div class="field-pair">
+            <label class="field">
+              <span class="field-label">人數</span>
+              <input type="number" id="f-pax" name="pax" min="1" max="9" inputmode="numeric" required>
+            </label>
+            <label class="field">
+              <span class="field-label">行李數</span>
+              <input type="number" id="f-bags" name="bags" min="0" max="20" inputmode="numeric">
+            </label>
+          </div>
+          <label class="field field-wide">
+            <span class="field-label">備註（選填）</span>
+            <textarea id="f-note" name="note" rows="2" placeholder="例：需要兒童座椅"></textarea>
+          </label>
+
+          <label class="field field-wide">
+            <span class="field-label">預約內容預覽</span>
+            <textarea id="preview" rows="8" readonly></textarea>
+          </label>
+
+          <div class="actions field-wide">
+            <button type="submit" class="btn btn-navy">傳到 LINE</button>
+            <button type="button" class="btn btn-outline" id="copy-btn">複製預約內容</button>
+            <span class="status" id="copy-status" role="status"></span>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-tint" id="contact">
+    <div class="wrap">
+      <h2>也可以直接聯絡我們</h2>
+      <p class="section-lede"><span data-text="hours">24 小時接受預約</span>。加入官方 LINE 後可要求通話，節省電話費，也可以用語音告知需求。</p>
+      <div class="contact-list">
+{{> contact_list}}
+      </div>
+    </div>
+  </section>
+</main>
+
+{{> footer}}
+
+<script src="js/config.js"></script>
+<script src="js/site.js"></script>
+<script src="js/booking.js"></script>
+</body>
+</html>

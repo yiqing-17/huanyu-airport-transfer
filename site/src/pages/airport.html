@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+{{> head}}
+</head>
+<body data-airport="{{airport_id}}">
+{{> header}}
+
+{{> page_head}}
+
+<main id="main">
+  <section class="section board-section">
+    <div class="wrap">
+      <div class="board-panel">
+        <div class="board-controls">
+          <p class="board-label" id="veh-label">車型</p>
+          <div class="gate-tabs" id="vehicle-tabs" role="group" aria-labelledby="veh-label"></div>
+        </div>
+        <div class="view-tabs" id="view-tabs" role="group" aria-label="顯示方式">
+          <button type="button" data-view="map" aria-pressed="true">路線圖</button>
+          <button type="button" data-view="table" aria-pressed="false">完整價目表</button>
+        </div>
+
+        <div id="view-map">
+          <div class="map-head">
+            <p class="board-hint">點選站點，畫面下方會出現預約按鈕；再點一次可取消。</p>
+            <div class="seg dir-toggle" role="radiogroup" aria-label="送機或接機">
+              <label><input type="radio" name="mapdir" value="send" checked><span><span class="lbl">{{> plane_up}}送機</span><small>Departure</small></span></label>
+              <label><input type="radio" name="mapdir" value="pickup"><span><span class="lbl">{{> plane_down}}接機</span><small>Arrival</small></span></label>
+            </div>
+          </div>
+          <div class="route-grid" id="route-grid"></div>
+        </div>
+
+        <div id="view-table" hidden>
+          <p class="board-hint">點選地區，畫面下方會出現預約按鈕；再點一次可取消。</p>
+          <div class="board-scroll">
+            <table class="board-table">
+              <caption class="sr" id="board-caption"></caption>
+              <thead>
+                <tr>
+                  <th scope="col">目的地</th>
+                  <th scope="col" class="num"><span class="dir"><span class="lbl">{{> plane_up}}送機</span><small>Departure</small></span></th>
+                  <th scope="col" class="num"><span class="dir"><span class="lbl">{{> plane_down}}接機</span><small>Arrival</small></span></th>
+                </tr>
+              </thead>
+              <tbody id="board-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <p class="error js-error" role="alert" hidden>
+          無法載入價目資料。請用本機伺服器開啟網站（做法在 README），不要直接點兩下開啟檔案。
+        </p>
+      </div>
+
+      <div class="board-panel board-premium" id="premium" hidden>
+        <h2 id="premium-title"></h2>
+        <p class="premium-caption" id="premium-caption"></p>
+        <table class="board-table board-table-simple">
+          <caption class="sr">Alphard 尊爵價目表</caption>
+          <thead><tr><th scope="col">目的地</th><th scope="col" class="num">單趟價格</th></tr></thead>
+          <tbody id="premium-body"></tbody>
+        </table>
+      </div>
+
+      <ul class="notes board-notes" id="notes"></ul>
+
+      <div class="ask">
+        <p>找不到你的地區，或有特殊需求？</p>
+        <div class="ask-actions">
+          <a class="btn btn-navy" data-link="line" target="_blank" rel="noopener">用 LINE 詢問</a>
+          <a class="btn btn-outline" data-link="phone">撥打電話</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-tint">
+    <div class="wrap">
+      <h2>其他機場</h2>
+      <div class="gates">
+{{other_gates}}
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="quote-bar" id="quote-bar" hidden>
+  <div class="wrap quote-bar-inner">
+    <div class="qb-info" aria-live="polite">
+      <p class="qb-area" id="qb-area"></p>
+      <p class="qb-vehicle"><span id="qb-vehicle"></span> <a class="qb-more" id="qb-more" href="{{href_booking}}">填寫詳細預約</a></p>
+    </div>
+    <div class="seg qb-dir">
+      <label><input type="radio" name="qbdir" value="send" checked><span>送機</span></label>
+      <label><input type="radio" name="qbdir" value="pickup"><span>接機</span></label>
+    </div>
+    <p class="qb-price"><span class="cur">NT$</span><b id="qb-price">—</b></p>
+    <a class="btn btn-navy" id="qb-line" target="_blank" rel="noopener">用 LINE 預約</a>
+  </div>
+</div>
+
+{{> footer}}
+
+<script src="js/config.js"></script>
+<script src="js/site.js"></script>
+<script src="js/airport.js"></script>
+</body>
+</html>

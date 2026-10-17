@@ -1,0 +1,19 @@
+{% extends "admin/base.html" %}
+{% block title %}登入{% endblock %}
+{% block content %}
+<div class="login card">
+  <h1>後台登入</h1>
+  {% if not configured %}
+    <p class="flash error">後台還沒有設定密碼，目前無法登入。請依 README 的步驟，用
+      <code>python manage.py hash-password</code> 產生密碼，再設定 <code>ADMIN_PASSWORD_HASH</code>。</p>
+  {% else %}
+  <form method="post" action="{{ url_for('admin_login') }}">
+    {{ csrf_input() }}
+    <input type="hidden" name="next" value="{{ next }}">
+    <label>帳號<input type="text" name="username" autocomplete="username" required autofocus></label>
+    <label>密碼<input type="password" name="password" autocomplete="current-password" required></label>
+    <p><button class="btn" type="submit">登入</button></p>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

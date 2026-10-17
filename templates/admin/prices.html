@@ -1,0 +1,55 @@
+{% extends "admin/base.html" %}
+{% block title %}價格{% endblock %}
+{% block content %}
+<h1>價格管理</h1>
+<p class="muted small">目前版本 #{{ version.id }}｜{{ version.created_at|taipei }}｜{{ version.created_by or '—' }}｜{{ version.note }}
+  <a href="{{ url_for('admin_prices_history') }}">查看修改紀錄、還原舊價格</a></p>
+
+<div class="tabs" aria-label="機場">
+  {% for a in sheet.airports %}
+    <a href="{{ url_for('admin_prices', airport=a.id, vehicle=vehicle.id) }}" class="{{ 'on' if a.id == airport.id }}">{{ a.name }}</a>
+  {% endfor %}
+</div>
+<div class="tabs" aria-label="車型">
+  {% for v in sheet.vehicles %}
+    <a href="{{ url_for('admin_prices', airport=airport.id, vehicle=v.id) }}" class="{{ 'on' if v.id == vehicle.id }}">{{ v.name }}</a>
+  {% endfor %}
+</div>
+
+{% if warnings %}
+<div class="flash warn" role="alert">
+  <b>儲存前請再確認：</b>
+  <ul>{% for w in warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+  數字沒有問題的話，請按最下方的「確認並儲存」。
+</div>
+{% endif %}
+
+<form method="post" action="{{ url_for('admin_prices') }}">
+  {{ csrf_input() }}
+  <input type="hidden" name="airport" value="{{ airport.id }}">
+  <input type="hidden" name="vehicle" value="{{ vehicle.id }}">
+  <input type="hidden" name="base_version" value="{{ version.id }}">
+  {% if confirm %}<input type="hidden" name="confirm" value="1">{% endif %}
+  <div class="table-wrap">
+    <table>
+      <caption class="muted small" style="text-align:left;padding:.6rem .8rem">{{ airport.name }}｜{{ vehicle.name }}（單位：元）</caption>
+      <thead><tr><th>地區</th><th>送機</th><th>接機</th></tr></thead>
+      <tbody>
+      {% set ns = namespace(group='') %}
+      {% for r in rows %}
+        {% if r.group != ns.group %}{% set ns.group = r.group %}<tr class="group"><td colspan="3">{{ r.group }}</td></tr>{% endif %}
+        <tr class="{{ 'bad' if row_errors.get(r.index) }}">
+          <td>{{ r.name }}{% if row_errors.get(r.index) %}<span class="err">{{ row_errors[r.index] }}</span>{% endif %}</td>
+          <td><input type="number" inputmode="numeric" name="send_{{ r.index }}" value="{{ r.send }}" min="1" max="200000" step="1" required aria-label="{{ r.name }} 送機價"></td>
+          <td><input type="number" inputmode="numeric" name="pickup_{{ r.index }}" value="{{ r.pickup }}" min="1" max="200000" step="1" required aria-label="{{ r.name }} 接機價"></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="sticky-actions">
+    <button class="btn {{ 'warn' if confirm }}" type="submit">{{ '確認並儲存' if confirm else '儲存價格' }}</button>
+    <span class="muted small">儲存後前台網站立刻套用，並留下可還原的紀錄。已經成立的訂單不受影響。</span>
+  </div>
+</form>
+{% endblock %}
